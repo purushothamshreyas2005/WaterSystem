@@ -1,0 +1,230 @@
+DOCKER - KUBERNETES 
+
+***** GITHUB CLONING *******
+
+VS CODE > TERMINAL
+git clone <github link>
+cd <repo name>
+code .
+
+# New VS Window opens
+
+git branch feature-anyname
+git checkout feature-anyname
+git switch -c feature-anyname
+git push -u origin feature-anyname
+
+#Code is pushed to GitHub.
+
+***** Dockerfile creation ***** in the same repo
+FileName: Dockerfile
+Code:
+FROM nginx:latest
+COPY index.html /usr/share/nginx/html/index.html
+EXPOSE 80
+
+***** yaml file creation ***** in the same repo
+FileName: deployment.yaml
+Code:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: html-demo
+  labels:
+    app: html-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: html-demo  # This MUST match the template label below
+  template:
+    metadata:
+      labels:
+        app: html-demo # This is the label applied to the Pods
+    spec:
+      containers:
+      - name: html-demo-container
+        image: 23mis0617/html-demo # Use the image you just pushed       ----------> change ur regno
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: html-demo-service
+spec:
+  selector:
+    app: html-demo
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: NodePort
+
+
+***** DOCKER DESKTOP ***** 
+Login ur acc > settings > kubernetes > enable kubernetes > apply > close {running status}
+
+go to docker account > acc settings > settings > personal access tokens > generate new token 
+Give description : anything
+Acess permissions: Read, write & delete
+
+Open CMD
+Paste the link & enter the password given in docker desktop. 
+Once, login successfull, token is usable.
+
+
+***** JENKINS ***** 
+Settings > credentials > add credentials > USERNAME WITH PASSWORD
+Username: 23mis0617 -----> ur username in docker which is regno
+Password: personal access token given in docker desktop
+ID: dockerhub
+Description: anything
+create
+
+Settings > credentials > add credentials > SECRET FILE
+Choose file: C drive > Users > useracc > .kube > config
+create
+
+Create new item in Jenkins > pipeline 
+Pipeline script: 
+
+pipeline {
+agent any
+environment {
+DOCKER_IMAGE = "23mis0617/html-demo"     -----------------> change ur regno
+}
+stages {
+ stage('Clone Code') {
+steps {
+git branch: 'main',
+url: 'https://github.com/swetab-max/docker-example.git' ------------------> change ur git repo link
+}
+}
+stage('Build Docker Image') {
+steps {
+bat 'docker build -t %DOCKER_IMAGE% .'
+}
+}
+stage('Push Image') {
+steps {
+withCredentials([usernamePassword(credentialsId: 'dockerhub',
+usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+bat 'docker login -u %USER% -p %PASS%'
+bat 'docker push %DOCKER_IMAGE%'
+}
+}
+}
+stage('Deploy to Kubernetes') {
+steps {
+withCredentials([file(credentialsId: 'kuberconfig', variable:
+'KUBECONFIG')]) {
+bat '''
+set KUBECONFIG=%KUBECONFIG%
+kubectl apply -f deployment.yaml --validate=false
+'''
+}
+}
+}
+}
+}
+
+
+Apply, save and Build Now
+
+Same to be reflected in Docker Desktop > Builds section.
+
+
+************************************************************************************************
+If above codes, dont work; try these:
+
+deployment.yaml : 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: html-demo
+  labels:
+    app: html-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: html-demo
+  template:
+    metadata:
+      labels:
+        app: html-demo
+    spec:
+      containers:
+      - name: html-demo-container
+        image: 23mis0617/html-demo:latest   # change regno
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: html-demo-service
+spec:
+  selector:
+    app: html-demo
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30007
+
+Jenkins pipeline script:
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = "23mis0617/html-demo:latest"   // change regno
+    }
+
+    stages {
+
+        stage('Clone Code') {
+            steps {
+                git branch: 'main',
+                url: 'https://github.com/YOUR_USERNAME/YOUR_REPO.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                bat "docker build -t %DOCKER_IMAGE% ."
+            }
+        }
+
+        stage('Push Image') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub',
+                    usernameVariable: 'USER',
+                    passwordVariable: 'PASS')]) {
+
+                    bat "docker login -u %USER% -p %PASS%"
+                    bat "docker push %DOCKER_IMAGE%"
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                withCredentials([file(
+                    credentialsId: 'kuberconfig',
+                    variable: 'KUBECONFIG')]) {
+
+                    bat """
+                    set KUBECONFIG=%KUBECONFIG%
+                    kubectl apply -f deployment.yaml --validate=false
+                    """
+                }
+            }
+        }
+    }
+}
