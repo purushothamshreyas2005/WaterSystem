@@ -84,6 +84,7 @@ create
 
 Settings > credentials > add credentials > SECRET FILE
 Choose file: C drive > Users > useracc > .kube > config
+ID: kuberconfig
 create
 
 Create new item in Jenkins > pipeline 
