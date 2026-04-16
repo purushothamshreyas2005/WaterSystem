@@ -309,8 +309,13 @@ public class AppTest {
 **************************************************************************
 
 To view the same tests in VS Terminal
-Open the repo in vs code
-syntax: git pull origin main --allow-unrelated-histories 
+Open the repo in vs code:
+
+git clone <repo link>
+code .
+new window will open.
+In VS Terminal:
+git pull origin main --allow-unrelated-histories 
 Project structure will be visible on the left panel.
 And then in VS Terminal:
 syntax: mvn clean test
