@@ -8,7 +8,7 @@ cd <repo name>
 code .
 
 # New VS Window opens
-
+git add .
 git branch feature-anyname
 git checkout feature-anyname
 git switch -c feature-anyname
