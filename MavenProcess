@@ -306,3 +306,13 @@ public class AppTest {
         assertEquals(2, app.divide(6, 3));
     }
 }
+**************************************************************************
+
+To view the same tests in VS Terminal
+Open the repo in vs code
+syntax: git pull origin main --allow-unrelated-histories 
+Project structure will be visible on the left panel.
+And then in VS Terminal:
+syntax: mvn clean test
+
+Ull get build successful.
